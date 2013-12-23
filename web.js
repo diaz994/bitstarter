@@ -5,9 +5,8 @@ var buf = new Buffer(256);
 app.use(express.logger());
 
 app.get('/', function(request, response) {
-  response.send('Hello World 2!');
-  var file = fs.readFileSync('index.html');
-  buf.write(file,"utf-8");
+  response.send(fs.readFileSync('index.html'));
+  
 });
 
 var port = process.env.PORT || 5000;
