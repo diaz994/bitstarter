@@ -1,8 +1,31 @@
+#!/usr/bin/env node
+ 
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+var rest = require('restler');
+var URL_DEFAULT = "http://boiling-taiga-6776.herokuapp.com/";
+
+var urlProcess = function(url) {
+    var filename = "htmlContent.txt";
+    var html = rest.get(url).on('complete', function(result, response) {
+        if(result instanceof Error) {
+            sys.puts('Error: ' + result.message);
+            this.retry(5000);
+        } else {
+            fs.writeFile(__dirname + '/' + filename, result, function(err) {
+                if(err)
+                    throw err;
+            });
+        }
+    });
+};
+
+var assertURLExists = function(url) {
+    return url.toString();
+}
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
@@ -38,14 +61,26 @@ var clone = function(fn) {
     return fn.bind({});
 };
 
-if(require.main == module) {
+if(require.main == module) 
+{
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+        .option('-u, --url <url>', 'URL to HTML file', clone(assertURLExists), URL_DEFAULT)
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
-    var outJson = JSON.stringify(checkJson, null, 4);
-    console.log(outJson);
-} else {
-    exports.checkHtmlFile = checkHtmlFile;
+    if(program.url) 
+    {
+	//rest.get(program.url).on('complete', function(result, response) {
+	    //fs.writeFileSync("htmlConten.txt", result);
+	    var file = urlProcess(program.url);
+            var checkJson = checkHtmlFile("htmlContent.txt", program.checks);
+            var outJson = JSON.stringify(checkJson, null, 4);
+	    console.log(outJson);
+    } 
+    else 
+    {
+        var checkJson = checkHtmlFile(program.file, program.checks);
+        var outJson = JSON.stringify(checkJson, null, 4);   
+        console.log(outJson);
+    } 
 }
